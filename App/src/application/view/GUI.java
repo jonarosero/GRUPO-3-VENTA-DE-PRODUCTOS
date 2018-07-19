@@ -1,5 +1,8 @@
 package application.view;
 
+import application.controller.Controller;
+import application.controller.jpa.CustomersJpaController;
+import application.model.*;
 import javax.swing.JOptionPane;
 
 /**
@@ -8,10 +11,17 @@ import javax.swing.JOptionPane;
  */
 public class GUI extends javax.swing.JFrame {
 
+    // controlers
+    CustomersJpaController customerController = new CustomersJpaController(Controller.manager);
+    
     public GUI() {
         initComponents();
+        // set panels
+        this.panelLogin.setVisible(true);
+        this.panelStatus.setVisible(false);
+        this.panelOrder.setVisible(false);
     }
-
+    
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -107,8 +117,22 @@ public class GUI extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnLoginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoginActionPerformed
-       
-       
+        // Validate
+        if (this.inputCustomerID.getText().equals("")) {
+            JOptionPane.showMessageDialog(null, "Ingresar un ID valido");
+            return;
+        }
+        // Get costumer
+        Customers c = customerController.findCustomers(this.inputCustomerID.getText());
+        // Validate db Response
+        if (c == null) {
+            JOptionPane.showMessageDialog(null, "No se encontraron resultados, Ingresar un ID valido");
+            return;
+        }
+        // valid customer, do actions and change layout
+        this.inputCustomerID.setText("");
+        this.panelLogin.setVisible(false);
+        this.panelStatus.setVisible(true);
     }//GEN-LAST:event_btnLoginActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
