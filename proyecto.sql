@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 19-07-2018 a las 23:40:16
+-- Tiempo de generación: 20-07-2018 a las 00:08:52
 -- Versión del servidor: 10.1.32-MariaDB
 -- Versión de PHP: 7.2.5
 
@@ -86,17 +86,12 @@ CREATE TABLE `order details` (
 CREATE TABLE `orders` (
   `OrderID` int(10) UNSIGNED NOT NULL,
   `CustomerID` varchar(5) DEFAULT NULL,
-  `EmployeeID` mediumint(8) UNSIGNED NOT NULL,
   `OrderDate` date DEFAULT NULL,
   `RequiredDate` date DEFAULT NULL,
   `ShippedDate` date DEFAULT NULL,
-  `ShipVia` tinyint(3) UNSIGNED DEFAULT NULL,
-  `Freight` decimal(10,2) UNSIGNED DEFAULT '0.00',
   `ShipName` varchar(40) DEFAULT NULL,
   `ShipAddress` varchar(60) DEFAULT NULL,
   `ShipCity` varchar(15) DEFAULT NULL,
-  `ShipRegion` varchar(15) DEFAULT NULL,
-  `ShipPostalCode` varchar(10) DEFAULT NULL,
   `ShipCountry` varchar(15) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -179,11 +174,7 @@ ALTER TABLE `order details`
 ALTER TABLE `orders`
   ADD PRIMARY KEY (`OrderID`),
   ADD KEY `OrderDate` (`OrderDate`),
-  ADD KEY `ShippedDate` (`ShippedDate`),
-  ADD KEY `ShipPostalCode` (`ShipPostalCode`),
-  ADD KEY `CustomerID` (`CustomerID`),
-  ADD KEY `EmployeeID` (`EmployeeID`),
-  ADD KEY `ShipVia` (`ShipVia`);
+  ADD KEY `ShippedDate` (`ShippedDate`);
 
 --
 -- Indices de la tabla `products`
@@ -239,14 +230,6 @@ ALTER TABLE `suppliers`
 ALTER TABLE `order details`
   ADD CONSTRAINT `order details_ibfk_1` FOREIGN KEY (`OrderID`) REFERENCES `orders` (`OrderID`),
   ADD CONSTRAINT `order details_ibfk_2` FOREIGN KEY (`ProductID`) REFERENCES `products` (`ProductID`);
-
---
--- Filtros para la tabla `orders`
---
-ALTER TABLE `orders`
-  ADD CONSTRAINT `orders_ibfk_1` FOREIGN KEY (`CustomerID`) REFERENCES `customers` (`CustomerID`),
-  ADD CONSTRAINT `orders_ibfk_2` FOREIGN KEY (`EmployeeID`) REFERENCES `employees` (`EmployeeID`),
-  ADD CONSTRAINT `orders_ibfk_3` FOREIGN KEY (`ShipVia`) REFERENCES `shippers` (`ShipperID`);
 
 --
 -- Filtros para la tabla `products`
