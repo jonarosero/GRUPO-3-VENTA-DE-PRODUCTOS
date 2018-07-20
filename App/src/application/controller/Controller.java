@@ -22,7 +22,12 @@ public class Controller implements ActionListener {
      */
     public static final EntityManagerFactory Manager = Persistence.createEntityManagerFactory("AppPU");
 
+    // model
+    Customers customer;
+
+    // view
     private GUI gui;
+
     // controlers
     CustomersJpaController customerController = new CustomersJpaController(Controller.Manager);
 
@@ -39,13 +44,34 @@ public class Controller implements ActionListener {
         gui.panelLogin.setVisible(true);
         gui.panelStatus.setVisible(false);
         gui.panelOrder.setVisible(false);
+        // set action listener to btn's
+        gui.btnLogin.addActionListener(this);
+        gui.btnNew.addActionListener(this);
+        gui.btnDelete.addActionListener(this);
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        String command = e.getActionCommand();
+        if (command.equals("Login")) {
+            login();
+        } else if (command.equals("New")) {
+            newOrder();
+        }
     }
 
+    /**
+     * Set application for new Order
+     */
+    private void newOrder() {
+        // change panel
+        gui.panelStatus.setVisible(false);
+        gui.panelOrder.setVisible(true);
+    }
+
+    /**
+     * Validate login, and change view
+     */
     private void login() {
         // Validate
         if (gui.inputCustomerID.getText().equals("")) {
@@ -53,9 +79,9 @@ public class Controller implements ActionListener {
             return;
         }
         // Get costumer
-        Customers c = customerController.findCustomers(gui.inputCustomerID.getText());
+        customer = customerController.findCustomers(gui.inputCustomerID.getText());
         // Validate db Response
-        if (c == null) {
+        if (customer == null) {
             JOptionPane.showMessageDialog(null, "No se encontraron resultados, Ingresar un ID valido");
             return;
         }
@@ -63,17 +89,18 @@ public class Controller implements ActionListener {
         gui.inputCustomerID.setText("");
         gui.panelLogin.setVisible(false);
         gui.panelStatus.setVisible(true);
-        gui.textCustomerID.setText(c.toString());
+        gui.textCustomerID.setText(customer.toString());
+        updateStatusTable();
     }
 
     // load table data
-    private void updateStatusTable(int id) {
+    private void updateStatusTable() {
         // get new model
         Object tblCol[] = {"Numero de Orden", "Fecha Pedido", "Fecha Enviado", "Nombre"};
         DefaultTableModel tableModel = new DefaultTableModel(null, tblCol);
         gui.tableStatus.setModel(tableModel);
         // no params were provided
-        if (id == -1) {
+        if (customer == null) {
             return;
         }
         /*
