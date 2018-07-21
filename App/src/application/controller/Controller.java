@@ -135,7 +135,7 @@ public class Controller implements ActionListener {
     }
 
     /**
-     * Add product to client car. TODO: everything
+     * Add product to client car.
      */
     private void addProduct() {
         // get selected item
@@ -156,16 +156,13 @@ public class Controller implements ActionListener {
         orderDetails.setUnitPrice(product.getUnitPrice());
         try {
             // remove from db 1 unit of that product
-            product.setUnitsInStock((short) (product.getUnitsInStock() - quantity)); // TODO: add quantity
+            product.setUnitsInStock((short) (product.getUnitsInStock() - quantity)); 
             productsController.edit(product);
             // add to customer db as new product, or update product
             OrderDetails temp = orderDetailsController.findOrderDetails(orderDetails.getOrderDetailsPK());
-            System.out.println(temp);
             if (temp == null) {
-                System.out.println("Creating new order");
                 orderDetailsController.create(orderDetails);
             } else {
-                System.out.println("Updating order");
                 orderDetails.setQuantity((short) (temp.getQuantity() + quantity));
                 orderDetailsController.edit(orderDetails);
             }
@@ -190,17 +187,15 @@ public class Controller implements ActionListener {
         }
         // get product
         Products product = productsController.findProducts((short) gui.tableCar.getValueAt(row, 0));
-        OrderDetailsPK orderDetail = new OrderDetailsPK(this.orders.getOrderID(), product.getProductID());
+        OrderDetails orderDetail = orderDetailsController.findOrderDetails(new OrderDetailsPK(this.orders.getOrderID(), product.getProductID()));
         try {
             // add un unit to products with the quantity of selected product
-            product.setUnitsInStock((short) (1));// TODO: fix
+            product.setUnitsInStock((short) (product.getUnitsInStock() + orderDetail.getQuantity()));
             productsController.edit(product);
-            this.orderDetailsController.destroy(orderDetail);
+            this.orderDetailsController.destroy(orderDetail.getOrderDetailsPK());
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(null, "No se pudo eliminar producto del carrito");
-            Logger
-                    .getLogger(Controller.class
-                            .getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
         }
         // update tables
         this.loadProducts();
