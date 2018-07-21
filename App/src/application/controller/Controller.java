@@ -16,6 +16,7 @@ import application.model.Products;
 import application.view.GUI;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -50,11 +51,11 @@ public class Controller implements ActionListener {
     OrdersJpaController ordersController = new OrdersJpaController(Controller.Manager);
     ProductsJpaController productsController = new ProductsJpaController(Controller.Manager);
     SuppliersJpaController suppliersController = new SuppliersJpaController(Controller.Manager);
-    
+
     public Controller(GUI gui) {
         this.gui = gui;
     }
-    
+
     public void start() {
         // Window props
         gui.setVisible(true);
@@ -73,7 +74,7 @@ public class Controller implements ActionListener {
         gui.btnFin.addActionListener(this);
         gui.btnRemove.addActionListener(this);
     }
-    
+
     @Override
     public void actionPerformed(ActionEvent e) {
         String command = e.getActionCommand();
@@ -89,13 +90,55 @@ public class Controller implements ActionListener {
             removeProduct();
         } else if (command.equals("Cancelar")) {
             cancelOrder();
+        } else if (command.equals("Finalizar")) {
+            finOrder();
         }
+    }
+
+    /**
+     * ends order and data
+     */
+    private void finOrder() {
+        // validate fields
+        // set name of ship
+        if (gui.inputNombre.getText().equals("")) {
+            JOptionPane.showMessageDialog(null, "Ingrese el nombre de la Orden");
+            return;
+        }
+        this.orders.setShipName(gui.inputNombre.getText());
+        // set required date of ship
+        if (gui.inputRequiredDate.getText().equals("")) {
+            JOptionPane.showMessageDialog(null, "Ingrese la fecha requerida");
+            return;
+        }
+        // todo: valida date
+        this.orders.setRequiredDate(Date.valueOf(gui.inputRequiredDate.getText()));
+
+        // add date
+        this.orders.setOrderDate(new java.util.Date());
+        // location where shiped
+        this.orders.setShipAddress(customer.getAddress());
+        this.orders.setShipCity(customer.getCity());
+        this.orders.setShipCountry(customer.getCountry());
+        try {
+            // update db
+            this.ordersController.edit(orders);
+            // update view
+            gui.panelOrder.setVisible(false);
+            gui.panelStatus.setVisible(true);
+            this.updateStatusTable();
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(null, "No se pudo guardar tu pedido, vuelve a intentarlo");
+            Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
     }
 
     /**
      * delete order
      */
     private void cancelOrder() {
+        // TODO: remove all products in car
         try {
             this.ordersController.destroy(orders.getOrderID());
             // update view
@@ -120,13 +163,11 @@ public class Controller implements ActionListener {
         // get product
         Products product = productsController.findProducts((short) gui.tableProducts.getValueAt(row, 0));
         // create order detail
-        OrderDetails orderDetails = new OrderDetails( // detail of this product
-                new OrderDetailsPK( // link product with order
-                        orders.getOrderID(),
-                        product.getProductID()
-                ),
-                product.getUnitPrice(), (short) 1, 0);
-        orderDetails.setOrders(orders); // link this detail with this order
+        OrderDetails orderDetails = new OrderDetails(new OrderDetailsPK(orders.getOrderID(), product.getProductID()));
+        orderDetails.setOrders(orders);
+        orderDetails.setProducts(product);
+        orderDetails.setQuantity((short) 1); // TODO: add quantity
+        orderDetails.setUnitPrice(product.getUnitPrice());
         try {
             // remove from db 1 unit of that product
             product.setUnitsInStock((short) (product.getUnitsInStock() - 1)); // TODO: add quantity
@@ -238,7 +279,7 @@ public class Controller implements ActionListener {
             tableModel.setValueAt(order.getShipName(), i, 3);
         }
     }
-    
+
     private void loadProducts() {
         // get new model
         Object tblCol[] = {"ID", "Nombre", "Stock", "Precio", "Categoria", "Distribuidor"};
@@ -264,7 +305,7 @@ public class Controller implements ActionListener {
             tableModel.setValueAt(pro.getSupplierID().getName(), i, 5);
         }
     }
-    
+
     private void loadCart() {
         // get new model
         Object tblCol[] = {"ID", "Nombre", "Cantidad", "Precio", "Categoria", "Distribuidor"};
@@ -292,5 +333,5 @@ public class Controller implements ActionListener {
             // TODO: manage price
         }
     }
-    
+
 }
