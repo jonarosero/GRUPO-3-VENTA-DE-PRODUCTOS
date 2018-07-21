@@ -138,7 +138,20 @@ public class Controller implements ActionListener {
      * delete order
      */
     private void cancelOrder() {
-        // TODO: remove all products in car
+        // remove already selected items
+        orders = ordersController.findOrders(orders.getOrderID()); // update orders
+        List<OrderDetails> orderDetails = new ArrayList(orders.getOrderDetailsCollection());
+        for (OrderDetails orderDetail : orderDetails) {
+            Products product = orderDetail.getProducts();
+            try {
+                // add un unit to products with the quantity of selected product
+                product.setUnitsInStock((short) (1));
+                productsController.edit(product);
+                this.orderDetailsController.destroy(orderDetail.getOrderDetailsPK());
+            } catch (Exception ex) {
+                Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
         try {
             this.ordersController.destroy(orders.getOrderID());
             // update view
@@ -182,9 +195,11 @@ public class Controller implements ActionListener {
                 System.out.println("Updating order");
                 orderDetails.setQuantity((short) (orderDetails.getQuantity() + 2));// TODO: add quantity
                 orderDetailsController.edit(orderDetails);
+
             }
         } catch (Exception ex) {
-            Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Controller.class
+                    .getName()).log(Level.SEVERE, null, ex);
             JOptionPane.showMessageDialog(null, "No se pudo agregar el producto, vuelve a intentarlo");
         }
         // update tables
@@ -212,7 +227,9 @@ public class Controller implements ActionListener {
             this.orderDetailsController.destroy(orderDetail);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(null, "No se pudo eliminar producto del carrito");
-            Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
+            Logger
+                    .getLogger(Controller.class
+                            .getName()).log(Level.SEVERE, null, ex);
         }
         // update tables
         this.loadProducts();
