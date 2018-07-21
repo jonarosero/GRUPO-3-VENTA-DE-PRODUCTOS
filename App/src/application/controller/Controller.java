@@ -150,12 +150,13 @@ public class Controller implements ActionListener {
         OrderDetails orderDetails = new OrderDetails(new OrderDetailsPK(orders.getOrderID(), product.getProductID()));
         orderDetails.setOrders(orders);
         orderDetails.setProducts(product);
-        int q = 10;
-        orderDetails.setQuantity((short) q); // TODO: add quantity
+        int respQuantity = Integer.parseInt(JOptionPane.showInputDialog("Ingrese la cantidad"));
+        int quantity = respQuantity * Integer.parseInt(product.getQuantityPerUnit());
+        orderDetails.setQuantity((short) quantity);
         orderDetails.setUnitPrice(product.getUnitPrice());
         try {
             // remove from db 1 unit of that product
-            product.setUnitsInStock((short) (product.getUnitsInStock() - q)); // TODO: add quantity
+            product.setUnitsInStock((short) (product.getUnitsInStock() - quantity)); // TODO: add quantity
             productsController.edit(product);
             // add to customer db as new product, or update product
             OrderDetails temp = orderDetailsController.findOrderDetails(orderDetails.getOrderDetailsPK());
@@ -165,13 +166,11 @@ public class Controller implements ActionListener {
                 orderDetailsController.create(orderDetails);
             } else {
                 System.out.println("Updating order");
-                orderDetails.setQuantity((short) (orderDetails.getQuantity() + 2));// TODO: add quantity
+                orderDetails.setQuantity((short) (temp.getQuantity() + quantity));
                 orderDetailsController.edit(orderDetails);
-
             }
         } catch (Exception ex) {
-            Logger.getLogger(Controller.class
-                    .getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
             JOptionPane.showMessageDialog(null, "No se pudo agregar el producto, vuelve a intentarlo");
         }
         // update tables
@@ -276,6 +275,9 @@ public class Controller implements ActionListener {
         }
     }
 
+    /**
+     * clean fields of order panel
+     */
     private void cleanOrderGUI() {
         // clean products
         Object tblCol1[] = {"ID", "Nombre", "Cantidad", "Precio", "Categoria", "Distribuidor"};
@@ -283,8 +285,17 @@ public class Controller implements ActionListener {
         // clean new model
         Object tblCol2[] = {"ID", "Nombre", "Cantidad", "Stock", "Precio", "Categoria", "Distribuidor"};
         gui.tableProducts.setModel(new DefaultTableModel(null, tblCol2));
+        // clean fieds
+        gui.inputNombre.setText("");
+        gui.inputRequiredDate.setText("");
+        gui.textDate.setText("");
+        gui.textNumber.setText("");
+        gui.textTotal.setText("");
     }
 
+    /**
+     * update cart and meta data
+     */
     private void loadCart() {
         // get new model
         Object tblCol[] = {"ID", "Nombre", "Cantidad", "Precio Unitario", "Total", "Distribuidor"};
@@ -343,6 +354,9 @@ public class Controller implements ActionListener {
         }
     }
 
+    /**
+     * loads product from db to table
+     */
     private void loadProducts() {
         // get new model
         Object tblCol[] = {"ID", "Nombre", "Cantidad", "Stock", "Precio", "Categoria", "Distribuidor"};
