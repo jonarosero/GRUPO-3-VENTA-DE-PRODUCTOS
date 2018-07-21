@@ -116,8 +116,6 @@ public class Controller implements ActionListener {
         // todo: valida date
         this.orders.setRequiredDate(Date.valueOf(gui.inputRequiredDate.getText()));
 
-        // add date
-        this.orders.setOrderDate(new java.util.Date());
         // location where shiped
         this.orders.setShipAddress(customer.getAddress());
         this.orders.setShipCity(customer.getCity());
@@ -152,11 +150,12 @@ public class Controller implements ActionListener {
         OrderDetails orderDetails = new OrderDetails(new OrderDetailsPK(orders.getOrderID(), product.getProductID()));
         orderDetails.setOrders(orders);
         orderDetails.setProducts(product);
-        orderDetails.setQuantity((short) 1); // TODO: add quantity
+        int q = 10;
+        orderDetails.setQuantity((short) q); // TODO: add quantity
         orderDetails.setUnitPrice(product.getUnitPrice());
         try {
             // remove from db 1 unit of that product
-            product.setUnitsInStock((short) (product.getUnitsInStock() - 1)); // TODO: add quantity
+            product.setUnitsInStock((short) (product.getUnitsInStock() - q)); // TODO: add quantity
             productsController.edit(product);
             // add to customer db as new product, or update product
             OrderDetails temp = orderDetailsController.findOrderDetails(orderDetails.getOrderDetailsPK());
@@ -195,7 +194,7 @@ public class Controller implements ActionListener {
         OrderDetailsPK orderDetail = new OrderDetailsPK(this.orders.getOrderID(), product.getProductID());
         try {
             // add un unit to products with the quantity of selected product
-            product.setUnitsInStock((short) (1));
+            product.setUnitsInStock((short) (1));// TODO: fix
             productsController.edit(product);
             this.orderDetailsController.destroy(orderDetail);
         } catch (Exception ex) {
@@ -218,12 +217,16 @@ public class Controller implements ActionListener {
         // update view
         // create new order
         orders = new Orders();
+        orders.setOrderDate(new java.util.Date());
         ordersController.create(orders);
         // change panel
         gui.panelStatus.setVisible(false);
         gui.panelOrder.setVisible(true);
         // load products
         loadProducts();
+        // set text
+        gui.textNumber.setText(orders.getOrderID().toString());
+        gui.textDate.setText(orders.getOrderDate().toString());
     }
 
     /**
@@ -273,68 +276,42 @@ public class Controller implements ActionListener {
         }
     }
 
-    private void loadProducts() {
-        // get new model
-        Object tblCol[] = {"ID", "Nombre", "Cantidad", "Stock", "Precio", "Categoria", "Distribuidor"};
-        DefaultTableModel tableModel = new DefaultTableModel(null, tblCol);
-        gui.tableProducts.setModel(tableModel);
-
-        // get cuenta cliente with account id
-        List<Products> products = this.productsController.findProductsEntities();
-        for (int i = 0; i < products.size(); i++) {
-            Products pro = products.get(i);
-            // Validate stock of product
-            if (pro.getUnitsInStock() < 0) {
-                // no more of this product, return
-                continue;
-            }
-            Object[] obj = null;
-            tableModel.addRow(obj);
-            tableModel.setValueAt(pro.getProductID(), i, 0);
-            tableModel.setValueAt(pro.getProductName(), i, 1);
-            tableModel.setValueAt(pro.getQuantityPerUnit(), i, 2);
-            tableModel.setValueAt(pro.getUnitsInStock(), i, 3);
-            tableModel.setValueAt(Utils.calculateCost(Integer.parseInt(pro.getQuantityPerUnit()), pro.getUnitPrice()), i, 4);
-            tableModel.setValueAt(pro.getCategoryID().getCategoryName(), i, 5);
-            tableModel.setValueAt(pro.getSupplierID().getName(), i, 6);
-        }
-    }
-
     private void cleanOrderGUI() {
         // clean products
         Object tblCol1[] = {"ID", "Nombre", "Cantidad", "Precio", "Categoria", "Distribuidor"};
         gui.tableCar.setModel(new DefaultTableModel(null, tblCol1));
         // clean new model
-        Object tblCol2[] = {"ID" , "Nombre", "Cantidad", "Stock", "Precio", "Categoria", "Distribuidor"};
+        Object tblCol2[] = {"ID", "Nombre", "Cantidad", "Stock", "Precio", "Categoria", "Distribuidor"};
         gui.tableProducts.setModel(new DefaultTableModel(null, tblCol2));
     }
 
     private void loadCart() {
         // get new model
-        Object tblCol[] = {"ID", "Nombre", "Cantidad", "Precio", "Categoria", "Distribuidor"};
+        Object tblCol[] = {"ID", "Nombre", "Cantidad", "Precio Unitario", "Total", "Distribuidor"};
         DefaultTableModel tableModel = new DefaultTableModel(null, tblCol);
         gui.tableCar.setModel(tableModel);
         // update and get ordes
         orders = ordersController.findOrders(orders.getOrderID());
         List<OrderDetails> orderDetails = new ArrayList(orders.getOrderDetailsCollection());
+        BigDecimal price = BigDecimal.ZERO;
         for (int i = 0; i < orderDetails.size(); i++) {
             OrderDetails detail = orderDetails.get(i);
             Products pro = detail.getProducts();
-            // Validate stock of product
-            if (pro.getUnitsInStock() < 0) {
-                // no more of this product, return
-                continue;
-            }
             Object[] obj = null;
+            BigDecimal total = Utils.calculateCost(detail.getQuantity(), detail.getUnitPrice());
+            ////////////////////
             tableModel.addRow(obj);
             tableModel.setValueAt(pro.getProductID(), i, 0);
             tableModel.setValueAt(pro.getProductName(), i, 1);
-            tableModel.setValueAt(pro.getQuantityPerUnit(), i, 2);
-            tableModel.setValueAt(pro.getUnitPrice(), i, 3);
-            tableModel.setValueAt(pro.getCategoryID().getCategoryName(), i, 4);
+            tableModel.setValueAt(detail.getQuantity(), i, 2);
+            tableModel.setValueAt(detail.getUnitPrice(), i, 3);
+            tableModel.setValueAt(total, i, 4);
             tableModel.setValueAt(pro.getSupplierID().getName(), i, 5);
-            // TODO: manage price
+            // manage cost
+            price = price.add(total);
         }
+        // set status gui
+        gui.textTotal.setText(price.toString());
     }
 
     /**
@@ -363,6 +340,33 @@ public class Controller implements ActionListener {
         } catch (IllegalOrphanException | NonexistentEntityException ex) {
             Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
             JOptionPane.showMessageDialog(null, "No se pudo cancelar orden, vuelve a intentar");
+        }
+    }
+
+    private void loadProducts() {
+        // get new model
+        Object tblCol[] = {"ID", "Nombre", "Cantidad", "Stock", "Precio", "Categoria", "Distribuidor"};
+        DefaultTableModel tableModel = new DefaultTableModel(null, tblCol);
+        gui.tableProducts.setModel(tableModel);
+
+        // get cuenta cliente with account id
+        List<Products> products = this.productsController.findProductsEntities();
+        for (int i = 0; i < products.size(); i++) {
+            Products pro = products.get(i);
+            // Validate stock of product
+            if (pro.getUnitsInStock() <= 0) {
+                // no more of this product
+                continue;
+            }
+            Object[] obj = null;
+            tableModel.addRow(obj);
+            tableModel.setValueAt(pro.getProductID(), i, 0);
+            tableModel.setValueAt(pro.getProductName(), i, 1);
+            tableModel.setValueAt(pro.getQuantityPerUnit(), i, 2);
+            tableModel.setValueAt(pro.getUnitsInStock(), i, 3);
+            tableModel.setValueAt(Utils.calculateCost(Integer.parseInt(pro.getQuantityPerUnit()), pro.getUnitPrice()), i, 4);
+            tableModel.setValueAt(pro.getCategoryID().getCategoryName(), i, 5);
+            tableModel.setValueAt(pro.getSupplierID().getName(), i, 6);
         }
     }
 }
