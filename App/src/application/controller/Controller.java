@@ -14,8 +14,10 @@ import application.model.OrderDetailsPK;
 import application.model.Orders;
 import application.model.Products;
 import application.view.GUI;
+import com.Utils;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.math.BigDecimal;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
@@ -135,35 +137,6 @@ public class Controller implements ActionListener {
     }
 
     /**
-     * delete order
-     */
-    private void cancelOrder() {
-        // remove already selected items
-        orders = ordersController.findOrders(orders.getOrderID()); // update orders
-        List<OrderDetails> orderDetails = new ArrayList(orders.getOrderDetailsCollection());
-        for (OrderDetails orderDetail : orderDetails) {
-            Products product = orderDetail.getProducts();
-            try {
-                // add un unit to products with the quantity of selected product
-                product.setUnitsInStock((short) (1));
-                productsController.edit(product);
-                this.orderDetailsController.destroy(orderDetail.getOrderDetailsPK());
-            } catch (Exception ex) {
-                Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-        try {
-            this.ordersController.destroy(orders.getOrderID());
-            // update view
-            gui.panelOrder.setVisible(false);
-            gui.panelStatus.setVisible(true);
-        } catch (IllegalOrphanException | NonexistentEntityException ex) {
-            Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
-            JOptionPane.showMessageDialog(null, "No se pudo cancelar orden, vuelve a intentar");
-        }
-    }
-
-    /**
      * Add product to client car. TODO: everything
      */
     private void addProduct() {
@@ -240,6 +213,9 @@ public class Controller implements ActionListener {
      * Set application for new Order
      */
     private void newOrder() {
+        // clean gui
+        cleanOrderGUI();
+        // update view
         // create new order
         orders = new Orders();
         ordersController.create(orders);
@@ -299,7 +275,7 @@ public class Controller implements ActionListener {
 
     private void loadProducts() {
         // get new model
-        Object tblCol[] = {"ID", "Nombre", "Stock", "Precio", "Categoria", "Distribuidor"};
+        Object tblCol[] = {"ID", "Nombre", "Cantidad", "Stock", "Precio", "Categoria", "Distribuidor"};
         DefaultTableModel tableModel = new DefaultTableModel(null, tblCol);
         gui.tableProducts.setModel(tableModel);
 
@@ -316,11 +292,21 @@ public class Controller implements ActionListener {
             tableModel.addRow(obj);
             tableModel.setValueAt(pro.getProductID(), i, 0);
             tableModel.setValueAt(pro.getProductName(), i, 1);
-            tableModel.setValueAt(pro.getUnitsInStock(), i, 2);
-            tableModel.setValueAt(pro.getUnitPrice(), i, 3);
-            tableModel.setValueAt(pro.getCategoryID().getCategoryName(), i, 4);
-            tableModel.setValueAt(pro.getSupplierID().getName(), i, 5);
+            tableModel.setValueAt(pro.getQuantityPerUnit(), i, 2);
+            tableModel.setValueAt(pro.getUnitsInStock(), i, 3);
+            tableModel.setValueAt(Utils.calculateCost(Integer.parseInt(pro.getQuantityPerUnit()), pro.getUnitPrice()), i, 4);
+            tableModel.setValueAt(pro.getCategoryID().getCategoryName(), i, 5);
+            tableModel.setValueAt(pro.getSupplierID().getName(), i, 6);
         }
+    }
+
+    private void cleanOrderGUI() {
+        // clean products
+        Object tblCol1[] = {"ID", "Nombre", "Cantidad", "Precio", "Categoria", "Distribuidor"};
+        gui.tableCar.setModel(new DefaultTableModel(null, tblCol1));
+        // clean new model
+        Object tblCol2[] = {"ID" , "Nombre", "Cantidad", "Stock", "Precio", "Categoria", "Distribuidor"};
+        gui.tableProducts.setModel(new DefaultTableModel(null, tblCol2));
     }
 
     private void loadCart() {
@@ -351,4 +337,32 @@ public class Controller implements ActionListener {
         }
     }
 
+    /**
+     * Delete order, and already selected items
+     */
+    private void cancelOrder() {
+        // remove already selected items
+        orders = ordersController.findOrders(orders.getOrderID()); // update orders
+        List<OrderDetails> orderDetails = new ArrayList(orders.getOrderDetailsCollection());
+        for (OrderDetails orderDetail : orderDetails) {
+            Products product = orderDetail.getProducts();
+            try {
+                // add units to products with the quantity of selected product
+                product.setUnitsInStock((short) (product.getUnitsInStock() + orderDetail.getQuantity()));
+                productsController.edit(product);
+                this.orderDetailsController.destroy(orderDetail.getOrderDetailsPK());
+            } catch (Exception ex) {
+                Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        try {
+            this.ordersController.destroy(orders.getOrderID());
+            // update view
+            gui.panelOrder.setVisible(false);
+            gui.panelStatus.setVisible(true);
+        } catch (IllegalOrphanException | NonexistentEntityException ex) {
+            Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
+            JOptionPane.showMessageDialog(null, "No se pudo cancelar orden, vuelve a intentar");
+        }
+    }
 }
