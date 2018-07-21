@@ -6,8 +6,11 @@ import application.controller.jpa.OrderDetailsJpaController;
 import application.controller.jpa.OrdersJpaController;
 import application.controller.jpa.ProductsJpaController;
 import application.controller.jpa.SuppliersJpaController;
+import application.controller.jpa.exceptions.IllegalOrphanException;
+import application.controller.jpa.exceptions.NonexistentEntityException;
 import application.model.Customers;
 import application.model.OrderDetails;
+import application.model.OrderDetailsPK;
 import application.model.Orders;
 import application.model.Products;
 import application.view.GUI;
@@ -47,11 +50,11 @@ public class Controller implements ActionListener {
     OrdersJpaController ordersController = new OrdersJpaController(Controller.Manager);
     ProductsJpaController productsController = new ProductsJpaController(Controller.Manager);
     SuppliersJpaController suppliersController = new SuppliersJpaController(Controller.Manager);
-
+    
     public Controller(GUI gui) {
         this.gui = gui;
     }
-
+    
     public void start() {
         // Window props
         gui.setVisible(true);
@@ -70,7 +73,7 @@ public class Controller implements ActionListener {
         gui.btnFin.addActionListener(this);
         gui.btnRemove.addActionListener(this);
     }
-
+    
     @Override
     public void actionPerformed(ActionEvent e) {
         String command = e.getActionCommand();
@@ -82,11 +85,30 @@ public class Controller implements ActionListener {
             newOrder();
         } else if (command.equals("Añadir")) {
             addProduct();
+        } else if (command.equals("Eliminar")) {
+            removeProduct();
+        } else if (command.equals("Cancelar")) {
+            cancelOrder();
         }
     }
 
     /**
-     * Add product to client car
+     * delete order
+     */
+    private void cancelOrder() {
+        try {
+            this.ordersController.destroy(orders.getOrderID());
+            // update view
+            gui.panelOrder.setVisible(false);
+            gui.panelStatus.setVisible(true);
+        } catch (IllegalOrphanException | NonexistentEntityException ex) {
+            Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
+            JOptionPane.showMessageDialog(null, "No se pudo cancelar orden, vuelve a intentar");
+        }
+    }
+
+    /**
+     * Add product to client car. TODO: everything
      */
     private void addProduct() {
         // get selected item
@@ -98,29 +120,58 @@ public class Controller implements ActionListener {
         // get product
         Products product = productsController.findProducts((short) gui.tableProducts.getValueAt(row, 0));
         // create order detail
-        OrderDetails orderDetails = new OrderDetails();
-        orderDetails.setOrders(orders);
-        orderDetails.setProducts(product);
-        orderDetails.setQuantity((short) 1); // TODO: add quantity
-        orderDetails.setUnitPrice(product.getUnitPrice());
+        OrderDetails orderDetails = new OrderDetails( // detail of this product
+                new OrderDetailsPK( // link product with order
+                        orders.getOrderID(),
+                        product.getProductID()
+                ),
+                product.getUnitPrice(), (short) 1, 0);
+        orderDetails.setOrders(orders); // link this detail with this order
         try {
             // remove from db 1 unit of that product
             product.setUnitsInStock((short) (product.getUnitsInStock() - 1)); // TODO: add quantity
             productsController.edit(product);
             // add to customer db as new product, or update product
             OrderDetails temp = orderDetailsController.findOrderDetails(orderDetails.getOrderDetailsPK());
+            System.out.println(temp);
             if (temp == null) {
                 System.out.println("Creating new order");
                 orderDetailsController.create(orderDetails);
             } else {
                 System.out.println("Updating order");
-                orderDetails.setQuantity((short) (orderDetails.getQuantity() + 1));// TODO: add quantity
+                orderDetails.setQuantity((short) (orderDetails.getQuantity() + 2));// TODO: add quantity
                 orderDetailsController.edit(orderDetails);
             }
         } catch (Exception ex) {
             Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
             JOptionPane.showMessageDialog(null, "No se pudo agregar el producto, vuelve a intentarlo");
+        }
+        // update tables
+        this.loadProducts();
+        this.loadCart();
+    }
+
+    /**
+     * Remove product from db.
+     */
+    private void removeProduct() {
+        // get selected item
+        int row = gui.tableCar.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(null, "Seleccione un producto de carrito");
             return;
+        }
+        // get product
+        Products product = productsController.findProducts((short) gui.tableCar.getValueAt(row, 0));
+        OrderDetailsPK orderDetail = new OrderDetailsPK(this.orders.getOrderID(), product.getProductID());
+        try {
+            // add un unit to products with the quantity of selected product
+            product.setUnitsInStock((short) (1));
+            productsController.edit(product);
+            this.orderDetailsController.destroy(orderDetail);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(null, "No se pudo eliminar producto del carrito");
+            Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
         }
         // update tables
         this.loadProducts();
@@ -187,7 +238,7 @@ public class Controller implements ActionListener {
             tableModel.setValueAt(order.getShipName(), i, 3);
         }
     }
-
+    
     private void loadProducts() {
         // get new model
         Object tblCol[] = {"ID", "Nombre", "Stock", "Precio", "Categoria", "Distribuidor"};
@@ -213,7 +264,7 @@ public class Controller implements ActionListener {
             tableModel.setValueAt(pro.getSupplierID().getName(), i, 5);
         }
     }
-
+    
     private void loadCart() {
         // get new model
         Object tblCol[] = {"ID", "Nombre", "Cantidad", "Precio", "Categoria", "Distribuidor"};
@@ -241,5 +292,5 @@ public class Controller implements ActionListener {
             // TODO: manage price
         }
     }
-
+    
 }
