@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 20-07-2018 a las 00:08:52
+-- Tiempo de generación: 22-07-2018 a las 05:25:15
 -- Versión del servidor: 10.1.32-MariaDB
 -- Versión de PHP: 7.2.5
 
@@ -60,8 +60,8 @@ CREATE TABLE `customers` (
 --
 
 INSERT INTO `customers` (`CustomerID`, `Name`, `Address`, `City`, `Country`, `Phone`) VALUES
-('1104113889', 'Bruno Esparza', 'Pradera, Alisos y Arupos', 'Loja', 'Loja', '0011223344'),
-('123', 'Test Cliente', 'Calle 1 y Calle 2', 'Loja', 'Loja', '1122334455');
+('1104113889', 'Bruno Esparza', 'Pradera, Alisos y Arupos', 'Loja', 'Ecuador', '0011223344'),
+('123', 'Test Cliente', 'Calle 1 y Calle 2', 'Loja', 'Ecuador', '1122334455');
 
 -- --------------------------------------------------------
 
@@ -77,6 +77,13 @@ CREATE TABLE `order details` (
   `Discount` double(8,0) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+--
+-- Volcado de datos para la tabla `order details`
+--
+
+INSERT INTO `order details` (`OrderID`, `ProductID`, `UnitPrice`, `Quantity`, `Discount`) VALUES
+(1, 1, '1200.00', 2, 0);
+
 -- --------------------------------------------------------
 
 --
@@ -85,7 +92,7 @@ CREATE TABLE `order details` (
 
 CREATE TABLE `orders` (
   `OrderID` int(10) UNSIGNED NOT NULL,
-  `CustomerID` varchar(5) DEFAULT NULL,
+  `CustomerID` varchar(10) DEFAULT NULL,
   `OrderDate` date DEFAULT NULL,
   `RequiredDate` date DEFAULT NULL,
   `ShippedDate` date DEFAULT NULL,
@@ -94,6 +101,13 @@ CREATE TABLE `orders` (
   `ShipCity` varchar(15) DEFAULT NULL,
   `ShipCountry` varchar(15) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Volcado de datos para la tabla `orders`
+--
+
+INSERT INTO `orders` (`OrderID`, `CustomerID`, `OrderDate`, `RequiredDate`, `ShippedDate`, `ShipName`, `ShipAddress`, `ShipCity`, `ShipCountry`) VALUES
+(1, '123', '2018-07-21', '2018-01-01', NULL, 'Tesst', 'Calle 1 y Calle 2', 'Loja', 'Ecuador');
 
 -- --------------------------------------------------------
 
@@ -116,9 +130,9 @@ CREATE TABLE `products` (
 --
 
 INSERT INTO `products` (`ProductID`, `ProductName`, `SupplierID`, `CategoryID`, `QuantityPerUnit`, `UnitPrice`, `UnitsInStock`) VALUES
-(1, 'Iphone X', 1, 1, '1', '1200.00', 20),
-(2, 'Iphone X', 2, 1, '2', '1150.00', 10),
-(3, 'MacBook Pro', 1, 1, '1', '6999.00', 100);
+(1, 'Iphone X', 1, 1, '1', '1200.00', 90),
+(2, 'Iphone X', 2, 1, '2', '1150.00', 74),
+(3, 'MacBook Pro', 1, 1, '1', '6999.00', 98);
 
 -- --------------------------------------------------------
 
@@ -206,7 +220,7 @@ ALTER TABLE `categories`
 -- AUTO_INCREMENT de la tabla `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `OrderID` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `OrderID` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT de la tabla `products`

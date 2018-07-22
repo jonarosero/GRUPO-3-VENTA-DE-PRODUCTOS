@@ -261,7 +261,6 @@ public class Controller implements ActionListener {
         for (int i = 0; i < orders.size(); i++) {
             Orders order = orders.get(i);
             // clear invalid products
-            System.out.println(order);
             if (order.getShipName() == null) {
                 List<OrderDetails> orderDetails = new ArrayList(order.getOrderDetailsCollection());
                 for (OrderDetails orderDetail : orderDetails) {
@@ -277,14 +276,12 @@ public class Controller implements ActionListener {
                 }
                 try {
                     this.ordersController.destroy(order.getOrderID());
-                    // update view
-                    gui.panelOrder.setVisible(false);
-                    gui.panelStatus.setVisible(true);
                 } catch (IllegalOrphanException | NonexistentEntityException ex) {
                     Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
                 }
+                continue;
             }
-            // get throught other account
+            // get throught other accounts
             if (!this.customer.getCustomerID().equals(order.getCustomerID())) {
                 continue;
             }
