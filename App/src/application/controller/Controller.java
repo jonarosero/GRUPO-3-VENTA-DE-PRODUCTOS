@@ -102,13 +102,44 @@ public class Controller implements ActionListener {
             finOrder();
             updateStatusTable();
         } else if (command.equals("Delete")) {
+            deleteOrder();
+            updateStatusTable();
         } else if (command.equals("LogOut")) {
             logOut();
         }
     }
 
     /**
-     *
+     * Removes order
+     */
+    private void deleteOrder() {
+        int row = gui.tableStatus.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(null, "Seleccione una fila de productos");
+            return;
+        }
+        Orders order = this.ordersController.findOrders((int) gui.tableStatus.getValueAt(row, 0));
+        List<OrderDetails> orderDetails = new ArrayList(order.getOrderDetailsCollection());
+        orderDetails.forEach((orderDetail) -> {
+            Products product = orderDetail.getProducts();
+            try {
+                // add units to products with the quantity of selected product
+                product.setUnitsInStock((short) (product.getUnitsInStock() + orderDetail.getQuantity()));
+                productsController.edit(product);
+                this.orderDetailsController.destroy(orderDetail.getOrderDetailsPK());
+            } catch (Exception ex) {
+                Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        });
+        try {
+            this.ordersController.destroy(order.getOrderID());
+        } catch (IllegalOrphanException | NonexistentEntityException ex) {
+            Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    /**
+     * Logout customer
      */
     private void logOut() {
         // change view
@@ -278,7 +309,7 @@ public class Controller implements ActionListener {
             // clear invalid products
             if (order.getShipName() == null) {
                 List<OrderDetails> orderDetails = new ArrayList(order.getOrderDetailsCollection());
-                for (OrderDetails orderDetail : orderDetails) {
+                orderDetails.forEach((orderDetail) -> {
                     Products product = orderDetail.getProducts();
                     try {
                         // add units to products with the quantity of selected product
@@ -288,7 +319,7 @@ public class Controller implements ActionListener {
                     } catch (Exception ex) {
                         Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                }
+                });
                 try {
                     this.ordersController.destroy(order.getOrderID());
                 } catch (IllegalOrphanException | NonexistentEntityException ex) {
