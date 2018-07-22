@@ -33,6 +33,7 @@ public class GUI extends javax.swing.JFrame {
         tableStatus = new javax.swing.JTable();
         btnDelete = new javax.swing.JButton();
         btnNew = new javax.swing.JButton();
+        btnLogOut = new javax.swing.JButton();
         panelOrder = new javax.swing.JPanel();
         jLabel3 = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
@@ -154,6 +155,8 @@ public class GUI extends javax.swing.JFrame {
 
         btnNew.setText("New");
 
+        btnLogOut.setText("LogOut");
+
         javax.swing.GroupLayout panelStatusLayout = new javax.swing.GroupLayout(panelStatus);
         panelStatus.setLayout(panelStatusLayout);
         panelStatusLayout.setHorizontalGroup(
@@ -162,9 +165,11 @@ public class GUI extends javax.swing.JFrame {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelStatusLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(panelStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jScrollPane1)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 588, Short.MAX_VALUE)
                     .addGroup(panelStatusLayout.createSequentialGroup()
-                        .addGap(0, 454, Short.MAX_VALUE)
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(btnLogOut)
+                        .addGap(18, 18, 18)
                         .addComponent(btnNew)
                         .addGap(18, 18, 18)
                         .addComponent(btnDelete)))
@@ -179,7 +184,8 @@ public class GUI extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(panelStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnDelete)
-                    .addComponent(btnNew))
+                    .addComponent(btnNew)
+                    .addComponent(btnLogOut))
                 .addContainerGap())
         );
 
@@ -369,6 +375,7 @@ public class GUI extends javax.swing.JFrame {
     public javax.swing.JButton btnCancel;
     public javax.swing.JButton btnDelete;
     public javax.swing.JButton btnFin;
+    public javax.swing.JButton btnLogOut;
     public javax.swing.JButton btnLogin;
     public javax.swing.JButton btnNew;
     public javax.swing.JButton btnRemove;

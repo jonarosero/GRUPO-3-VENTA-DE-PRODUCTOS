@@ -75,6 +75,7 @@ public class Controller implements ActionListener {
         gui.btnCancel.addActionListener(this);
         gui.btnFin.addActionListener(this);
         gui.btnRemove.addActionListener(this);
+        gui.btnLogOut.addActionListener(this);
     }
 
     @Override
@@ -100,7 +101,21 @@ public class Controller implements ActionListener {
         } else if (command.equals("Finalizar")) {
             finOrder();
             updateStatusTable();
+        } else if (command.equals("Delete")) {
+        } else if (command.equals("LogOut")) {
+            logOut();
         }
+    }
+
+    /**
+     *
+     */
+    private void logOut() {
+        // change view
+        gui.panelStatus.setVisible(false);
+        gui.panelLogin.setVisible(true);
+        // clean input
+        gui.inputCustomerID.setText("");
     }
 
     /**
