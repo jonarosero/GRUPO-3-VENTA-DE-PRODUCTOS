@@ -82,18 +82,24 @@ public class Controller implements ActionListener {
         String command = e.getActionCommand();
         if (command.equals("Login")) {
             login();
+            updateStatusTable();
         } else if (command.equals("New")) {
             newOrder();
-        } else if (command.equals("New")) {
-            newOrder();
+            loadProducts();
         } else if (command.equals("Añadir")) {
             addProduct();
+            this.loadProducts();
+            this.loadCart();
         } else if (command.equals("Eliminar")) {
             removeProduct();
+            this.loadProducts();
+            this.loadCart();
         } else if (command.equals("Cancelar")) {
             cancelOrder();
+            updateStatusTable();
         } else if (command.equals("Finalizar")) {
             finOrder();
+            updateStatusTable();
         }
     }
 
@@ -126,7 +132,6 @@ public class Controller implements ActionListener {
             // update view
             gui.panelOrder.setVisible(false);
             gui.panelStatus.setVisible(true);
-            this.updateStatusTable();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(null, "No se pudo guardar tu pedido, vuelve a intentarlo");
             Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
@@ -156,7 +161,7 @@ public class Controller implements ActionListener {
         orderDetails.setUnitPrice(product.getUnitPrice());
         try {
             // remove from db 1 unit of that product
-            product.setUnitsInStock((short) (product.getUnitsInStock() - quantity)); 
+            product.setUnitsInStock((short) (product.getUnitsInStock() - quantity));
             productsController.edit(product);
             // add to customer db as new product, or update product
             OrderDetails temp = orderDetailsController.findOrderDetails(orderDetails.getOrderDetailsPK());
@@ -170,9 +175,6 @@ public class Controller implements ActionListener {
             Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
             JOptionPane.showMessageDialog(null, "No se pudo agregar el producto, vuelve a intentarlo");
         }
-        // update tables
-        this.loadProducts();
-        this.loadCart();
     }
 
     /**
@@ -187,7 +189,9 @@ public class Controller implements ActionListener {
         }
         // get product
         Products product = productsController.findProducts((short) gui.tableCar.getValueAt(row, 0));
-        OrderDetails orderDetail = orderDetailsController.findOrderDetails(new OrderDetailsPK(this.orders.getOrderID(), product.getProductID()));
+        OrderDetails orderDetail = orderDetailsController.findOrderDetails(
+                new OrderDetailsPK(this.orders.getOrderID(), product.getProductID())
+        );
         try {
             // add un unit to products with the quantity of selected product
             product.setUnitsInStock((short) (product.getUnitsInStock() + orderDetail.getQuantity()));
@@ -197,9 +201,6 @@ public class Controller implements ActionListener {
             JOptionPane.showMessageDialog(null, "No se pudo eliminar producto del carrito");
             Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
         }
-        // update tables
-        this.loadProducts();
-        this.loadCart();
     }
 
     /**
@@ -212,12 +213,11 @@ public class Controller implements ActionListener {
         // create new order
         orders = new Orders();
         orders.setOrderDate(new java.util.Date());
+        orders.setCustomerID(customer.getCustomerID());
         ordersController.create(orders);
         // change panel
         gui.panelStatus.setVisible(false);
         gui.panelOrder.setVisible(true);
-        // load products
-        loadProducts();
         // set text
         gui.textNumber.setText(orders.getOrderID().toString());
         gui.textDate.setText(orders.getOrderDate().toString());
@@ -244,7 +244,6 @@ public class Controller implements ActionListener {
         gui.panelLogin.setVisible(false);
         gui.panelStatus.setVisible(true);
         gui.textCustomerID.setText(customer.toString());
-        updateStatusTable();
     }
 
     // load table data
@@ -261,6 +260,34 @@ public class Controller implements ActionListener {
         List<Orders> orders = this.ordersController.findOrdersEntities();
         for (int i = 0; i < orders.size(); i++) {
             Orders order = orders.get(i);
+            // clear invalid products
+            System.out.println(order);
+            if (order.getShipName() == null) {
+                List<OrderDetails> orderDetails = new ArrayList(order.getOrderDetailsCollection());
+                for (OrderDetails orderDetail : orderDetails) {
+                    Products product = orderDetail.getProducts();
+                    try {
+                        // add units to products with the quantity of selected product
+                        product.setUnitsInStock((short) (product.getUnitsInStock() + orderDetail.getQuantity()));
+                        productsController.edit(product);
+                        this.orderDetailsController.destroy(orderDetail.getOrderDetailsPK());
+                    } catch (Exception ex) {
+                        Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+                try {
+                    this.ordersController.destroy(order.getOrderID());
+                    // update view
+                    gui.panelOrder.setVisible(false);
+                    gui.panelStatus.setVisible(true);
+                } catch (IllegalOrphanException | NonexistentEntityException ex) {
+                    Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            // get throught other account
+            if (!this.customer.getCustomerID().equals(order.getCustomerID())) {
+                continue;
+            }
             Object[] obj = null;
             tableModel.addRow(obj);
             tableModel.setValueAt(order.getOrderID(), i, 0);
